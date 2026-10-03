@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Reflected Rumors — Campus News Portal</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background:#0f172a; color:#e2e8f0; max-width:700px; margin:40px auto; padding:0 20px; }
+  h1 { color:#38bdf8; }
+  .card { background:#1e293b; border-radius:10px; padding:20px; margin-top:20px; box-shadow:0 0 20px rgba(0,0,0,0.3); }
+  #welcome { font-size:1.1em; }
+  input { padding:8px; width:70%; border-radius:6px; border:none; }
+  button { padding:8px 14px; border-radius:6px; border:none; background:#38bdf8; cursor:pointer; font-weight:bold; }
+  #flagBox { margin-top:15px; font-family:monospace; font-size:1.1em; color:#4ade80; min-height:1.5em; }
+  footer { margin-top:30px; font-size:0.8em; color:#64748b; }
+</style>
+</head>
+<body>
+
+<h1>📰 Reflected Rumors</h1>
+<p>Your friendly campus gossip portal. Tell us who you are!</p>
+
+<div class="card">
+  <div id="welcome">Welcome, Guest!</div>
+  <br>
+  <input id="nameInput" placeholder="Enter your name">
+  <button onclick="updateName()">Say Hi</button>
+  <div id="flagBox"></div>
+</div>
+
+<div class="card">
+  <strong>Mission:</strong> This page reflects the <code>name</code> URL
+  parameter into the welcome banner. There is a filter in place meant to
+  stop script injection. Find a way around it and get the page to call
+  <code>revealFlag()</code> on your behalf to win.
+  <br><br>
+  Example: <code>?name=YourName</code>
+</div>
+
+<footer>Built for [Your Society Name]'s CTF — good luck, hacker 🕵️</footer>
+
+<script>
+  // Flag is only revealed if revealFlag() actually gets executed
+  // by a successful XSS payload — not hardcoded into the page source.
+  function revealFlag() {
+    document.getElementById('flagBox').innerText =
+      "🎉 FLAG: flagCES{d0m_xss_ev3nt_h4ndl3r_bypa55}";
+  }
+
+  // Naive filter: blocks the literal "<script" substring (case-insensitive)
+  // but does nothing against event-handler based vectors like
+  // <img onerror=...>, <svg onload=...>, javascript: URIs, etc.
+  function sanitize(input) {
+    return input.replace(/<script/gi, '');
+  }
+
+  function render(name) {
+    // VULNERABLE SINK: untrusted input concatenated straight into innerHTML
+    document.getElementById('welcome').innerHTML =
+      "Welcome, " + sanitize(name) + "!";
+  }
+
+  function updateName() {
+    const val = document.getElementById('nameInput').value;
+    const url = new URL(window.location);
+    url.searchParams.set('name', val);
+    window.history.replaceState({}, '', url);
+    render(val);
+  }
+
+  // On load, reflect whatever is in the ?name= param
+  const params = new URLSearchParams(window.location.search);
+  const initialName = params.get('name') || 'Guest';
+  render(initialName);
+</script>
+
+</body>
+</html>
